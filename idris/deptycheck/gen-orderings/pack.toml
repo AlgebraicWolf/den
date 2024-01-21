@@ -1,0 +1,23 @@
+[custom.all.gen-orderings]
+type = "local"
+path = "."
+ipkg = "gen-orderings.ipkg"
+test = "test/test.ipkg"
+
+[custom.all.gen-orderings-test]
+type = "local"
+path = "test"
+ipkg = "test.ipkg"
+
+[custom.all.deptycheck]
+type   = "git"
+url    = "https://github.com/buzden/deptycheck"
+commit = "0ef6deab355d12965797f60d41cd96062f51f152"
+ipkg   = "deptycheck.ipkg"
+
+[custom.all.elab-util]
+type   = "git"
+url    = "https://github.com/buzden/idris2-elab-util"
+commit = "6ff9878208940a9f8074f9030e272f4ca176d64f"
+ipkg   = "elab-util.ipkg"
+

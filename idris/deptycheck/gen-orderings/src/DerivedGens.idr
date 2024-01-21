@@ -59,3 +59,29 @@ genExpression : Fuel ->
                 Gen MaybeEmpty (ctx : Context ** Expression ctx)
 genExpression = deriveGen
 
+genLangGiven : Fuel ->
+               (Fuel -> (ctx : Context) -> Gen MaybeEmpty (Expression ctx)) =>
+               (ctx : Context) ->
+               Gen MaybeEmpty (Lang ctx)
+genLangGiven = deriveGen
+
+
+||| Generator of programs for given context.
+public export
+genLangGiven' : Fuel ->
+                (ctx : Context) ->
+                Gen MaybeEmpty (Lang ctx)
+genLangGiven' fl ctx = genLangGiven fl ctx @{genExpressionGiven'}
+-- genLangGiven fl [] = pure Empty
+-- genLangGiven fl (nm :: ctx) = (Assign nm) <$> (genExpressionGiven' fl ctx) <*> (genLangGiven fl ctx)
+
+genLangDerived : Fuel ->
+                 (Fuel -> Gen MaybeEmpty Int) =>
+                 Gen MaybeEmpty (ctx : Context ** Lang ctx)
+genLangDerived = deriveGen
+
+||| Derived generator of programs in some context.
+public export
+genLangDerived' : Fuel ->
+                  Gen MaybeEmpty (ctx : Context ** Lang ctx)
+genLangDerived' fl = genLangDerived fl @{genInt}

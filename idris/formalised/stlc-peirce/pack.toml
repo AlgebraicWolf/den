@@ -1,0 +1,6 @@
+[custom.all.stlc-peirce]
+type = "local"
+path = "."
+ipkg = "stlc-peirce.ipkg"
+test = "test/test.ipkg"
+

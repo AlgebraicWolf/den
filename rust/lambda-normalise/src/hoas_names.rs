@@ -80,7 +80,10 @@ where
 {
     match v {
         Value::VVar(n) => Term::Var(n),
-        Value::VApp(value, f) => Term::App(Box::new(quote(*value, ns)), Box::new(quote(f(), ns))),
+        Value::VApp(value, f) => Term::App(
+            Box::new(quote(*value, &mut ns.clone())),
+            Box::new(quote(f(), ns)),
+        ),
         Value::VLam(n, f) => {
             let n = n.fresh_in_env(ns);
             ns.insert(n.clone(), ());

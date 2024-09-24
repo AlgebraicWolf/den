@@ -126,20 +126,14 @@ where
         Term::Let(n, term, term1) => subst(&n, *term1, *term),
         // Recursive cases: the step is possible somewhere deeper
         // In app, we can reduce in left-hand side if it's not in NF.
-        Term::App(term, term1) if !term.is_nf() => {
-            Term::App(Box::new(reduce_step(*term)), term1)
-        }
+        Term::App(term, term1) if !term.is_nf() => Term::App(Box::new(reduce_step(*term)), term1),
         // If left-hand side is in NF, then we can reduce in
         // right-hand side if it's not in NF. Note that by now we know that
         // the left-hand side is not lambda, otherwise the earlier case
         // would've been successful.
-        Term::App(term, term1) if !term1.is_nf() => {
-            Term::App(term, Box::new(reduce_step(*term1)))
-        }
+        Term::App(term, term1) if !term1.is_nf() => Term::App(term, Box::new(reduce_step(*term1))),
         // In lambda, the reduction might be possible in body
-        Term::Lam(n, body) => {
-            Term::Lam(n, Box::new(reduce_step(*body)))
-        }
+        Term::Lam(n, body) => Term::Lam(n, Box::new(reduce_step(*body))),
 
         // No substituon possible, return term as is
         term => term,

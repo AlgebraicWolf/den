@@ -5,6 +5,7 @@ use std::{collections::HashMap, fmt::Display, io::Read, process::exit, str::from
 use parser::{parse_tokenised, tokenise, TokenSeq};
 use term::Term;
 
+mod closures_names;
 mod fresh;
 mod hoas_names;
 mod parser;
@@ -81,6 +82,11 @@ fn main() {
             name: "hoas-names",
             description: "NbE normalisation algorithm, encoding lambdas using HOAS",
             handler: Box::new(|t| hoas_names::normalise(t)),
+        },
+        Mode {
+            name: "closures-names",
+            description: "NbE normalisation algorithm, encoding lambdas using closures",
+            handler: Box::new(|t| closures_names::normalise(t)),
         },
     ];
 

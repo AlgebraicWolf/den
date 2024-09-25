@@ -73,17 +73,19 @@ ex2 = ImpIntro
 
 -- We will start by constructing useful machinery.
 
--- Relation is just a list of pairs
+-- Relation is a type indexed by pairs of elements. We say that
+-- relation between elements is satisfied iff the corresponding type
+-- is inhabited.
 Relation : Type -> Type
-Relation ty = List (ty, ty)
+Relation ty = ty -> ty -> Type
 
 -- Reflexivity means that each element has an identity arrow
 0 Reflexive : Relation ty -> Type
-Reflexive rel = (el : ty) -> Elem (el, el) rel
+Reflexive rel = (el : ty) -> rel el el
 
 -- Transitivity means that arrows are composable
 0 Transitive : Relation ty -> Type
-Transitive rel = {a, b, c : ty} -> Elem (a, b) rel -> Elem (b, c) rel -> Elem (a, c) rel
+Transitive rel = {a, b, c : ty} -> rel a b -> rel b c -> rel a c
 
 -- Valuation asserts which values are true in some world
 Valuation : Type -> Type
@@ -91,7 +93,7 @@ Valuation worlds = worlds -> List Nat
 
 -- Monotonicity means that something is true in some world, it is true for any accessible world
 0 Monotonic : Valuation ty -> Relation ty -> Type
-Monotonic val rel = {a, b : ty} -> Elem (a, b) rel -> All (\x => Elem x (val b)) (val a)
+Monotonic val rel = {a, b : ty} -> rel a b -> All (\x => Elem x (val b)) (val a)
 
 -- If we know that the property is true for all elements, it is true for a specific element
 getFromAll : Elem x xs -> All p xs -> p x
@@ -124,7 +126,7 @@ data TrueInWorld : (m : KripkeModel) -> (w : m.worlds) -> Prop -> Type where
   AxTrue : Elem n (m.val w) -> TrueInWorld m w (Atom n)
   -- Implication `A -> B` is true if, for all accessible worlds, if A holds, then B holds
   ImpTrue : ((w' : m.worlds) ->
-            Elem (w, w') m.rel -> 
+            m.rel w w' -> 
             assert_total (TrueInWorld m w' a) ->  -- It doesn't look like I've abused this in any way,
                                                   -- but it's worth looking for a better formalisation
             TrueInWorld m w' b) ->
@@ -144,7 +146,7 @@ TrueWithContext : List Prop -> Prop -> Type
 TrueWithContext ctx a = (m : KripkeModel) -> (w : m.worlds) -> All (TrueInWorld m w) ctx -> TrueInWorld m w a
 
 -- If something is true in some world, then it must be true in any other accessible world
-accessiblePreservesTrue : (m : KripkeModel) -> (w, w' : m.worlds) -> Elem (w, w') m.rel -> TrueInWorld m w a -> TrueInWorld m w' a
+accessiblePreservesTrue : (m : KripkeModel) -> (w, w' : m.worlds) -> m.rel w w' -> TrueInWorld m w a -> TrueInWorld m w' a
 
 infixr 5 ||-
 (||-) : List Prop -> Prop -> Type
@@ -191,24 +193,24 @@ provIsTrue (ImpElim x y) m w ctxTrue
 -- Therefore, `(A -> B) -> A` holds in every world, and `A` does not hold in `f`,
 -- so Peirce's law does not hold in the model, making it a counterexample.
 
-0 monotonic : Monotonic (\t => if t then [0] else []) [(False, False), (True, True), (False, True)]
-monotonic Here = []
-monotonic (There x) = case x of
-                           Here => [Here]
-                           (There y) => case y of
-                                             Here => []
-                                             (There z) impossible
+data Rel : Bool -> Bool -> Type where
+  ReflexiveRel : Rel a a
+  FalseTrue : Rel False True
+
+0 monotonic : Monotonic (\t => if t then [0] else []) Rel
+monotonic ReflexiveRel = case b of
+                              False => []
+                              True => [Here]
+monotonic FalseTrue = []
 
 0 noPeirceModel : KripkeModel
 noPeirceModel = MkKripke Bool
-                         [(False, False), (True, True), (False, True)]
-                         (MkPreorder (\case True => There Here
-                                            False => Here) 
-                                     (\x, y => case (x, y) of
-                                                    (Here, Here) => x
-                                                    (Here, (There (There Here))) => y
-                                                    ((There Here), (There Here)) => x
-                                                    (Here, There Here) impossible))
+                         Rel
+                         (MkPreorder (\_ => ReflexiveRel)
+                                     (\x, y => case x of
+                                                    ReflexiveRel => y
+                                                    FalseTrue => case y of
+                                                                      ReflexiveRel => FalseTrue))
                          (\x => if x then [0] else [])
                          monotonic
 
@@ -225,7 +227,7 @@ peirceNotTrueInModel prf
                 case w' of
                      -- `A -> B` shouldn't actually hold in this world, because in True `A` holds, but `B` does not.
                      -- We will use that to construct absurdity.
-                     False => case ltrue True (There (There Here)) (AxTrue Here) of
+                     False => case ltrue True FalseTrue (AxTrue Here) of
                                    AxTrue (There x) impossible
                      -- World `True` is easy: `A` holds here by definition
                      True => AxTrue Here

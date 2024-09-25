@@ -11,4 +11,8 @@ Currently, the following algorithms are implemented:
 until the normal form is reached.
 2. `hoas-names` -- normalisation-by-evaluation algorithm based on representing values using
 [higher-order abstract syntax](https://en.wikipedia.org/wiki/Higher-order_abstract_syntax). For binders,
-plain names are used to refernce values in environment, hence the name.
+plain names are used to reference values in environment, hence the name.
+3. `closures-names` -- normalisation-by-evaluation algorithm based on representing values using closures.
+They are not the closures of the host language, but rather function body as a term and an environment
+packed together.
+Plain names are used by binders.

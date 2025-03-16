@@ -121,16 +121,9 @@ record KripkeModel where
   mono : Monotonic val rel
 
 -- We need to define when something is true in the world of a model
-data TrueInWorld : (m : KripkeModel) -> (w : m.worlds) -> Prop -> Type where
-  -- Atom is true if it is evaluated as true
-  AxTrue : Elem n (m.val w) -> TrueInWorld m w (Atom n)
-  -- Implication `A -> B` is true if, for all accessible worlds, if A holds, then B holds
-  ImpTrue : ((w' : m.worlds) ->
-            m.rel w w' ->
-            assert_total (TrueInWorld m w' a) ->  -- It doesn't look like I've abused this in any way,
-                                                  -- but it's worth looking for a better formalisation
-            TrueInWorld m w' b) ->
-            TrueInWorld m w (a ~> b)
+TrueInWorld : (m : KripkeModel) -> (w : m.worlds) -> Prop -> Type
+TrueInWorld m w (Atom n) = Elem n (m.val w)
+TrueInWorld m w (Imp a b) = (w' : m.worlds) -> m.rel w w' -> TrueInWorld m w' a -> TrueInWorld m w' b
 
 -- We say that a formula is true in model if it is true in all of its worlds
 TrueInModel : (m : KripkeModel) -> Prop -> Type
@@ -155,22 +148,22 @@ infixr 5 ||-
 -- Example: `A -> A` is an intuitionistic tautology
 -- Essentially, we need to show that in any world where `A` holds, `A` holds
 ex3 : [] ||- A ~> A
-ex3 m _ w = ImpTrue $ \_, _, x => x
+ex3 m _ w = \_, _, x => x
 
 -- Example: `A -> B -> A` is an intuitionistic tautology
 -- Here we need to use monotonicity of valuations
 ex4 : [] ||- A ~> B ~> A
-ex4 m _ w = ImpTrue $ \w', _, (AxTrue x) => ImpTrue $ \w'', p'', _ => AxTrue $ getFromAll x (m.mono p'')
+ex4 m _ w = \w', _, x => \w'', p'', _ => getFromAll x (m.mono p'')
 
 -- If something is provable, then it is true in every model
 0 provIsTrue : (ctx |- c) -> (ctx ||- c)
 provIsTrue (Ax x) m w ctxTrue = getFromAll x ctxTrue
 provIsTrue (ImpIntro x) m w ctxTrue
-  = ImpTrue $ \w', acs, aTrue =>
+  = \w', acs, aTrue =>
       let ctxTrue = mapProperty (accessiblePreservesTrue m w w' acs) ctxTrue
           in provIsTrue x m w' (aTrue :: ctxTrue)
 provIsTrue (ImpElim x y) m w ctxTrue
-  = let ImpTrue impTrue = provIsTrue y m w ctxTrue
+  = let impTrue = provIsTrue y m w ctxTrue
         in impTrue w (m.preorder.refl w) (provIsTrue x m w ctxTrue)
 
 
@@ -218,19 +211,19 @@ noPeirceModel = MkKripke Bool
 -- We know that implication is true in world `False`. That is bad, because there is a proof of
 -- `(A -> B) -> A`, but no proof of `A`. We will use this to construct `_|_`.
 peirceNotTrueInModel prf
-  = let ImpTrue f = prf False in
+  = let f = prf False in
         case f False (noPeirceModel.preorder.refl False) impLeftTrue of
-             (AxTrue x) => uninhabited x where
+             x => uninhabited x where
   -- We need to show that `(A -> B) -> A` holds, i. e. that in every world where `A -> B` holds, `A` holds.
   impLeftTrue : TrueInWorld Main.noPeirceModel False ((A ~> B) ~> A)
-  impLeftTrue = ImpTrue $ \w', acs, (ImpTrue ltrue) =>
+  impLeftTrue = \w', acs, ltrue =>
                 case w' of
                      -- `A -> B` shouldn't actually hold in this world, because in True `A` holds, but `B` does not.
                      -- We will use that to construct absurdity.
-                     False => case ltrue True FalseTrue (AxTrue Here) of
-                                   AxTrue (There x) impossible
+                     False => case ltrue True FalseTrue Here of
+                                   (There x) impossible
                      -- World `True` is easy: `A` holds here by definition
-                     True => AxTrue Here
+                     True => Here
 
 -- Since there is a model that disproves Peirce's law, it is not intuitionistically true
 0 peirceNotTrue : Not ([] ||- Peirce)

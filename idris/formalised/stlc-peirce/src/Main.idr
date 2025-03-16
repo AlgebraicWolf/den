@@ -54,10 +54,10 @@ ex1 : [] |- A ~> B ~> A
 ex1 = ImpIntro (ImpIntro (Ax (There Here)))
 
 ex2 : [] |- (A ~> B ~> C) ~> (A ~> B) ~> A ~> C
-ex2 = ImpIntro 
-        (ImpIntro 
-          (ImpIntro 
-            (ImpElim 
+ex2 = ImpIntro
+        (ImpIntro
+          (ImpIntro
+            (ImpElim
               (ImpElim (Ax Here) (Ax (There Here)))
               (ImpElim (Ax Here) (Ax $ There $ There $ Here)))))
 
@@ -106,7 +106,7 @@ record Preorder (rel : Relation ty) where
   refl : Reflexive rel
   trans : Transitive rel
 
--- Here comes the model definition! 
+-- Here comes the model definition!
 record KripkeModel where
   constructor MkKripke
   -- Kripke model consists of a world, which is a set of nodes...
@@ -126,11 +126,11 @@ data TrueInWorld : (m : KripkeModel) -> (w : m.worlds) -> Prop -> Type where
   AxTrue : Elem n (m.val w) -> TrueInWorld m w (Atom n)
   -- Implication `A -> B` is true if, for all accessible worlds, if A holds, then B holds
   ImpTrue : ((w' : m.worlds) ->
-            m.rel w w' -> 
+            m.rel w w' ->
             assert_total (TrueInWorld m w' a) ->  -- It doesn't look like I've abused this in any way,
                                                   -- but it's worth looking for a better formalisation
             TrueInWorld m w' b) ->
-            TrueInWorld m w (a ~> b) 
+            TrueInWorld m w (a ~> b)
 
 -- We say that a formula is true in model if it is true in all of its worlds
 TrueInModel : (m : KripkeModel) -> Prop -> Type
@@ -165,7 +165,7 @@ ex4 m _ w = ImpTrue $ \w', _, (AxTrue x) => ImpTrue $ \w'', p'', _ => AxTrue $ g
 -- If something is provable, then it is true in every model
 0 provIsTrue : (ctx |- c) -> (ctx ||- c)
 provIsTrue (Ax x) m w ctxTrue = getFromAll x ctxTrue
-provIsTrue (ImpIntro x) m w ctxTrue 
+provIsTrue (ImpIntro x) m w ctxTrue
   = ImpTrue $ \w', acs, aTrue =>
       let ctxTrue = mapProperty (accessiblePreservesTrue m w w' acs) ctxTrue
           in provIsTrue x m w' (aTrue :: ctxTrue)
@@ -217,7 +217,7 @@ noPeirceModel = MkKripke Bool
 0 peirceNotTrueInModel : Not (TrueInModel Main.noPeirceModel Peirce)
 -- We know that implication is true in world `False`. That is bad, because there is a proof of
 -- `(A -> B) -> A`, but no proof of `A`. We will use this to construct `_|_`.
-peirceNotTrueInModel prf 
+peirceNotTrueInModel prf
   = let ImpTrue f = prf False in
         case f False (noPeirceModel.preorder.refl False) impLeftTrue of
              (AxTrue x) => uninhabited x where
